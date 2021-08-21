@@ -32,6 +32,7 @@ Create an items table:
 `CREATE TABLE items(id SERIAL, name TEXT, revenue INT, course TEXT);`
 
 From above: What does `SERIAL` do?
+# Creates a primary key
 
 Run `SELECT * FROM items;` to make sure it was successful.
 
@@ -55,16 +56,17 @@ VALUES ('lobster mac n cheese', 1200, 'side'),
 
 ##### Write queries for the following:
 
-1. What's the total revenue for all items?
-1. What's the average revenue for all items?
-1. What's the minimum revenue for all items?
-1. What's the maximum revenue for all items?
-1. What the count for items with a name?
+1. What are all the items in the database? `SELECT * FROM items;`
+1. What's the total revenue for all items? `SELECT sum(revenue) FROM items;`
+1. What's the average revenue for all items? `SELECT avg(revenue) FROM items;`
+1. What's the minimum revenue for all items? `SELECT min(revenue) FROM items;`
+1. What's the maximum revenue for all items? `SELECT max(revenue) FROM items;`
+1. What the count for items with a name? `SELECT count(name) FROM items;`
 
 Let's create an item that has all NULL values:
-`INSERT into items (name, revenue, course) VALUES (NULL, NULL, NULL);`
+`INSERT INTO items (name, revenue, course) VALUES (NULL, NULL, NULL);`
 
-Typically you `count` records in a table by counting on the `id` column, like `SELECT COUNT(id) FROM items;`. However, it's not necessary for a table to have an `id` column. What else can you pass to `count` and still get `5` as your result?
+Typically you `count` records in a table by counting on the `id` column, like `SELECT COUNT(id) FROM items;`. However, it's not necessary for a table to have an `id` column. What else can you pass to `count` and still get `5` as your result? `SELECT COUNT(*) FROM items WHERE name IS NULL or name IS NOT NULL;`
 
 #### Building on Aggregate Functions
 
@@ -77,10 +79,10 @@ How can we get the revenue based on the course?
 
 ##### Write queries for the following:
 
-1. Return all `main` courses. Hint: What ActiveRecord method would you use to get this?
-1. Return only the names of the `main` courses.
-1. Return the min and max value for the `main` courses.
-1. What's the total revenue for all `main` courses?
+1. Return all `main` courses. Hint: What ActiveRecord method would you use to get this? `select * from items where course = 'main';`
+1. Return only the names of the `main` courses. `select name from items where course = 'main';`
+1. Return the min and max value for the `main` courses. `select min(revenue), max(revenue) from items where course = 'main';`
+1. What's the total revenue for all `main` courses? `select sum(revenue) from items where course = 'main';`
 
 #### INNER JOINS
 
@@ -164,8 +166,8 @@ id |         name         | revenue | season_id | id |  name
 
 This is useful, but we probably don't need all of the information from both tables.
 
-* Can you get it to display only the name for the item and the name for the season?
-* Having two columns with the same name is confusing. Can you customize each heading using `AS`?
+* Can you get it to display only the name for the item and the name for the season? `SELECT items.name, seasons.name FROM items INNER JOIN seasons ON items.season_id = seasons.id;`
+* Having two columns with the same name is confusing. Can you customize each heading using `AS`? `SELECT items.name as item_name, seasons.name as season_name FROM items INNER JOIN seasons ON items.season_id = seasons.id;`
 
 It should look like this:
 
@@ -187,7 +189,7 @@ Now let's combine multiple `INNER JOIN`s to pull data from three tables `items`,
 * Write a query that pulls all the category names for `arugula salad`.
   Hint: Use multiple `INNER JOIN`s and a `WHERE` clause.
 
-Can you get your return value to look like this?
+Can you get your return value to look like this? `SELECT items.name, categories.name FROM items INNER JOIN item_categories ON items.id = item_categories.item_id INNER JOIN categories ON item_categories.category_id = categories.id WHERE items.name = 'arugula salad';`
 
 ```sql
 name          |    name
@@ -199,7 +201,7 @@ arugula salad | vegetarian
 (4 rows)
 ```
 
-Can you change the column headings?
+Can you change the column headings? `SELECT items.name AS item_name, categories.name AS category_name FROM items INNER JOIN item_categories ON items.id = item_categories.item_id INNER JOIN categories ON item_categories.category_id = categories.id WHERE items.name = 'arugula salad';`
 
 ```sql
 item_name     | category_name
@@ -274,9 +276,40 @@ id  |         name        | revenue | season_id | id |  name
 ```
 
 What do you think a `RIGHT OUTER JOIN` will do?
+Return all records from the right table (seasons) and return matching records from the left table (items).
 
-* Write a query to test your guess.
+* Write a query to test your guess. `SELECT * FROM items i RIGHT OUTER JOIN seasons s ON i.season_id = s.id;`
+
+```sql
+ id |         name         | revenue | season_id | id |  name  
+----+----------------------+---------+-----------+----+--------
+  6 | hot dog              |    1000 |         1 |  1 | summer
+  2 | veggie lasagna       |    1000 |         1 |  1 | summer
+  3 | striped bass         |     500 |         1 |  1 | summer
+  4 | burger               |    2000 |         1 |  1 | summer
+  7 | arugula salad        |    1100 |         2 |  2 | autumn
+  1 | lobster mac n cheese |    1200 |         3 |  3 | winter
+  5 | grilled cheese       |     800 |         4 |  4 | spring
+(7 rows)
+```
 * Insert data into the right table that will not get returned on an `INNER JOIN`.
+`INSERT INTO seasons (name)
+values ('holiday');`
+
+`SELECT * FROM items i RIGHT OUTER JOIN seasons s ON i.season_id = s.id;`
+
+```sql
+ id |         name         | revenue | season_id | id |  name   
+----+----------------------+---------+-----------+----+---------
+  6 | hot dog              |    1000 |         1 |  1 | summer
+  2 | veggie lasagna       |    1000 |         1 |  1 | summer
+  3 | striped bass         |     500 |         1 |  1 | summer
+  4 | burger               |    2000 |         1 |  1 | summer
+  7 | arugula salad        |    1100 |         2 |  2 | autumn
+  1 | lobster mac n cheese |    1200 |         3 |  3 | winter
+  5 | grilled cheese       |     800 |         4 |  4 | spring
+    |                      |         |           |  5 | holiday
+```
 
 ### Subqueries
 
@@ -297,7 +330,7 @@ Subqueries need to be wrapped in parentheses. We can build more complex queries 
 SELECT * FROM items
 WHERE revenue > (Insert your query that calculates the avg inside these parentheses);
 ```
-
+`select * from items where revenue > (select avg(revenue) from items);`
 The result should look like so...
 
 ```sql
@@ -312,12 +345,15 @@ id |         name         | revenue | season_id
 ```
 
 
-1. Without looking at the previous solution, write a `WHERE` clause that returns the items that have a revenue less than the average revenue.
+1. Without looking at the previous solution, write a `WHERE` clause that returns the items that have a revenue less than the average revenue. `select * from items where revenue < (select avg(revenue) from items);`
 
 ### Additional Challenges
 
-* Write a query that returns the sum of all items that have a category of dinner.
+* Write a query that returns the sum of all items that have a category of dinner. `select items.name as item_name, categories.name as category_name from items INNER JOIN item_categories ON item_categories.item_id = items.id INNER JOIN categories ON categories.id = item_categories.category_id where categories.name = 'dinner';`
+
 * Write a query that returns the sum of all items for each category. The end result should look like this:
+`select categories.name as category_name, sum(revenue) from items INNER JOIN item_categories ON item_categories.item_id = items.id INNER JOIN categories ON categories.id = item_categories.category_id group by categories.name;`
+
 ```sql
 name       | sum
 -----------+------
@@ -330,7 +366,7 @@ side       | 2300
 
 ### Possible Solutions
 
-Some of these apply directly to challenges above. Most of them will need to be modified to acheive the challenge.
+Some of these apply directly to challenges above. Most of them will need to be modified to achieve the challenge.
 
 
 ```sql
